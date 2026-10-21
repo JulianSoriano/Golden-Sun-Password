@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+<!--
+  Golden Sun Password Generator
+  Password algorithm and data tables by Dyrati, ported from the "Golden Sun Password Generator"
+  spreadsheet (c) 2023 Dyrati, No Rights Reserved. Original Lua: https://github.com/Dyrati/Golden-Sun-Password-Transfer
+-->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Generate Golden Sun Gold, Silver and Bronze transfer passwords for The Lost Age.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+<title>Golden Sun Password Generator</title>
+<script>
+document.documentElement.setAttribute('data-skin', 'fantasy');
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Cinzel:wght@500;700&family=Cinzel+Decorative:wght@700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: two-pane workbench — party editor on the left, a sticky "password tablet" on the right; stacks with the tablet first on phones. */
+:root {
+  --bg: #eef0f4;
+  --surface: #ffffff;
+  --sunk: #e3e6ee;
+  --line: #cfd4e0;
+  --fg: #1d2333;
+  --muted: #5b6377;
+  --accent: #a8770f;          /* alchemy gold */
+  --accent-ink: #ffffff;
+  --accent-soft: #f6ead0;
+  --venus: #9a6a1c; --venus-soft: #f3e6cc;
+  --mercury: #1f6fa6; --mercury-soft: #d8e9f5;
+  --mars: #b23a2e; --mars-soft: #f6dcd8;
+  --jupiter: #6c4fa8; --jupiter-soft: #e7e0f4;
+  --gold: #b88a12; --silver: #7d8696; --bronze: #a35f2c;
+  --bad: #c0392b; --bad-soft: #fbe3e0;
+  --ok: #2d7a4f;
+  --tablet: #232a3d; --tablet-fg: #f3e7c4; --tablet-dim: #8f93a6; --tablet-cell: #2e3650;
+  --f-display: "Marcellus SC", "Trajan Pro", Georgia, serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12151f; --surface: #1a1f2d; --sunk: #222838; --line: #313950; --fg: #e7e9f0; --muted: #9aa1b5;
+  --accent: #e0ad3e; --accent-ink: #1b1607; --accent-soft: #3a3020;
+  --venus: #e0b061; --venus-soft: #3a2f1e; --mercury: #6db3e3; --mercury-soft: #1b3043;
+  --mars: #ec7d6f; --mars-soft: #42231f; --jupiter: #b59ae6; --jupiter-soft: #2f2645;
+  --gold: #e3b53f; --silver: #b4bccb; --bronze: #d58b55;
+  --bad: #ff8a7a; --bad-soft: #43201d; --ok: #6fcf97;
+  --tablet: #0b0e16; --tablet-fg: #f5df9f; --tablet-dim: #7a7f93; --tablet-cell: #181d2b;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12151f; --surface: #1a1f2d; --sunk: #222838; --line: #313950; --fg: #e7e9f0; --muted: #9aa1b5;
+  --accent: #e0ad3e; --accent-ink: #1b1607; --accent-soft: #3a3020;
+  --venus: #e0b061; --venus-soft: #3a2f1e; --mercury: #6db3e3; --mercury-soft: #1b3043;
+  --mars: #ec7d6f; --mars-soft: #42231f; --jupiter: #b59ae6; --jupiter-soft: #2f2645;
+  --gold: #e3b53f; --silver: #b4bccb; --bronze: #d58b55;
+  --bad: #ff8a7a; --bad-soft: #43201d; --ok: #6fcf97;
+  --tablet: #0b0e16; --tablet-fg: #f5df9f; --tablet-dim: #7a7f93; --tablet-cell: #181d2b;
+  color-scheme: dark }
+
+/* Fantasy skin (default): Golden Sun menu windows — night-blue gradient panes framed in parchment and gold, set on a starlit sky. Single dark world on purpose. */
+:root[data-skin="fantasy"] {
+  --bg: #0b1130; --surface: #15225a; --sunk: #0e1842; --line: #40549c; --fg: #f3ecd6; --muted: #aab4da;
+  --accent: #eac35c; --accent-ink: #1d1405; --accent-soft: #3d3418;
+  --venus: #ecbd66; --venus-soft: #3c3120; --mercury: #74c6f2; --mercury-soft: #173763;
+  --mars: #ff8f74; --mars-soft: #4b2129; --jupiter: #c9a8ff; --jupiter-soft: #32285f;
+  --gold: #f2cb4e; --silver: #ccd4e8; --bronze: #e39d60;
+  --bad: #ff9484; --bad-soft: #4e1f2b; --ok: #82e3a9;
+  --tablet: #0a0e22; --tablet-fg: #f6d97c; --tablet-dim: #8d94ba; --tablet-cell: #19214d;
+  --frame: #eadcb0; --frame-gold: #b8913a; --win-top: #27468f; --win-bot: #13235e; --field: #0a1336;
+  --f-display: "Cinzel", "Trajan Pro", Georgia, serif;
+  --f-body: "Alegreya Sans", "Figtree", system-ui, sans-serif;
+  color-scheme: dark;
+}
+:root[data-skin="fantasy"] body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1.2px 1.2px at 23px 41px, #fff8 50%, transparent 51%),
+    radial-gradient(1px 1px at 131px 87px, #fff6 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 187px 19px, #ffe9a8aa 50%, transparent 51%),
+    radial-gradient(1px 1px at 71px 163px, #fff5 50%, transparent 51%),
+    radial-gradient(1px 1px at 211px 191px, #fff4 50%, transparent 51%),
+    radial-gradient(ellipse 70% 45% at 15% -5%, #2d3f8fcc, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 95% 5%, #40297099, transparent 70%);
+  background-size: 230px 230px, 230px 230px, 230px 230px, 230px 230px, 230px 230px, 100% 900px, 100% 900px;
+  background-repeat: repeat, repeat, repeat, repeat, repeat, no-repeat, no-repeat;
+  font-size: 16px;
+}
+:root[data-skin="fantasy"] h1 { font-family: "Cinzel Decorative", var(--f-display); font-weight: 700; color: var(--gold);
+  background: linear-gradient(180deg, #fff1bf 0%, #f2cb4e 45%, #b8862a 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 0 #00000080); }
+:root[data-skin="fantasy"] h2 { font-weight: 700; color: var(--frame); letter-spacing: .04em; }
+:root[data-skin="fantasy"] h2::before { content: "\25C6"; color: var(--accent); font-size: .6em; margin-right: .5em; vertical-align: .2em; }
+:root[data-skin="fantasy"] h3 { font-weight: 700; }
+:root[data-skin="fantasy"] .section,
+:root[data-skin="fantasy"] details.how {
+  background: linear-gradient(180deg, var(--win-top) 0%, var(--win-bot) 100%);
+  border: 2px solid var(--frame); border-radius: 9px;
+  box-shadow: inset 0 0 0 2px #081236, inset 0 0 0 3px var(--frame-gold), 0 14px 30px -16px #000;
+}
+:root[data-skin="fantasy"] .hero { background: linear-gradient(var(--el-soft), #0c1747cc 90px); border-color: #4a5fa8; }
+:root[data-skin="fantasy"] .num, :root[data-skin="fantasy"] .item-in { background: var(--field); border-color: #4a5ea8; }
+:root[data-skin="fantasy"] .num.bad, :root[data-skin="fantasy"] .item-in.bad { background: var(--bad-soft); border-color: var(--bad); }
+:root[data-skin="fantasy"] .btn { background: linear-gradient(180deg, var(--win-top), var(--win-bot)); border: 1px solid var(--frame); color: var(--frame); font-family: var(--f-display); letter-spacing: .03em; }
+:root[data-skin="fantasy"] .btn:hover { border-color: var(--accent); color: var(--accent); }
+:root[data-skin="fantasy"] .tab, :root[data-skin="fantasy"] .dj, :root[data-skin="fantasy"] .ev { background: #0d1a4ccc; border-color: #42569e; }
+:root[data-skin="fantasy"] .tab[aria-selected="true"] { background: var(--el-soft); border-color: var(--el); }
+:root[data-skin="fantasy"] .dj:has(input:checked) { background: var(--el-soft); border-color: var(--el); }
+:root[data-skin="fantasy"] .ev:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); }
+:root[data-skin="fantasy"] .mode { background: var(--field); border: 1px solid #42569e; }
+:root[data-skin="fantasy"] .mode label:has(input:checked) { background: linear-gradient(180deg, var(--win-top), var(--win-bot)); box-shadow: inset 0 0 0 1px var(--frame-gold); }
+:root[data-skin="fantasy"] .tablet {
+  background: radial-gradient(ellipse at 50% 0%, #1d2550 0%, var(--tablet) 70%);
+  border: 2px solid var(--frame-gold); border-radius: 12px;
+  box-shadow: inset 0 0 0 4px var(--tablet), inset 0 0 0 5px #b8913a88, 0 18px 40px -18px #000, 0 0 40px -10px #eac35c33;
+}
+:root[data-skin="fantasy"] .tablet h2::before { color: var(--tablet-fg); }
+:root[data-skin="fantasy"] .grp span { border: 1px solid #b8913a40; text-shadow: 0 0 6px #f6d97c55; }
+:root[data-skin="fantasy"] .ttab { font-weight: 700; }
+:root[data-skin="fantasy"] .tbtn { font-family: var(--f-display); font-weight: 700; background: linear-gradient(180deg, #fbe7a4, #d9a93c); }
+:root[data-skin="fantasy"] .tbtn.alt { background: transparent; }
+:root[data-skin="fantasy"] details.how summary { font-weight: 700; color: var(--frame); }
+:root[data-skin="fantasy"] details.how code { background: var(--field); }
+:root[data-skin="fantasy"] .lede { color: var(--muted); }
+:root[data-skin="fantasy"] .elements span { box-shadow: 0 0 10px var(--c, transparent); }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 400; text-wrap: balance; margin: 0; letter-spacing: .02em; }
+h1 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); line-height: 1.1; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.02rem; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 24px; margin-bottom: 22px; }
+header.top .lede { max-width: 62ch; margin-top: 8px; color: var(--muted); }
+.elements { display: flex; gap: 6px; }
+.elements span { width: 14px; height: 14px; border-radius: 50%; display: block; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 7px 13px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: .88rem; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.ghost { background: transparent; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); gap: 24px; align-items: start; }
+@media (max-width: 940px) { .layout { grid-template-columns: minmax(0, 1fr); } .tablet-col { order: -1; } }
+
+/* Section shell */
+.section { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 14px; }
+.editor { display: grid; gap: 18px; min-width: 0; }
+.sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 14px; }
+.sec-head .tiers { display: flex; gap: 5px; }
+.tier { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 99px; border: 1px solid currentColor; }
+.tier.g { color: var(--gold); } .tier.s { color: var(--silver); } .tier.b { color: var(--bronze); }
+
+/* Party */
+.mode { display: flex; flex-wrap: wrap; gap: 6px; background: var(--sunk); padding: 4px; border-radius: 9px; width: fit-content; max-width: 100%; }
+.mode label { padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: .86rem; color: var(--muted); }
+.mode input { position: absolute; opacity: 0; pointer-events: none; }
+.mode input:checked + span { color: var(--fg); }
+.mode label:has(input:checked) { background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.12); color: var(--fg); }
+.mode label:has(input:focus-visible) { outline: 2px solid var(--accent); }
+.party { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 1100px) { .party { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 460px) { .party { grid-template-columns: minmax(0, 1fr); } }
+.hero { border: 1px solid var(--line); border-radius: 9px; padding: 12px; display: grid; gap: 8px; border-top: 4px solid var(--el); background: linear-gradient(var(--el-soft), transparent 70px); }
+.hero .nm { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.hero .cls { font-size: .74rem; color: var(--muted); }
+.statrow { display: grid; grid-template-columns: 3.2em minmax(0,1fr); align-items: center; gap: 8px; }
+.statrow label { font-size: .74rem; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
+.num { width: 100%; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-variant-numeric: tabular-nums; text-align: right; }
+.num.bad, .item-in.bad { border-color: var(--bad); background: var(--bad-soft); }
+.stored { grid-column: 2; font-size: .72rem; color: var(--muted); text-align: right; margin-top: -6px; font-variant-numeric: tabular-nums; }
+.lvl .num { font-weight: 700; }
+
+/* Djinn */
+.djinn { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .djinn { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.el-col { display: grid; gap: 6px; align-content: start; }
+.el-col header { display: flex; justify-content: space-between; align-items: center; gap: 6px; border-bottom: 2px solid var(--el); padding-bottom: 4px; }
+.el-col header h3 { color: var(--el); }
+.linkbtn { background: none; border: 0; padding: 2px 0; color: var(--muted); font-size: .76rem; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.dj { display: flex; align-items: center; gap: 8px; padding: 5px 9px; border-radius: 7px; border: 1px solid var(--line); cursor: pointer; font-weight: 500; user-select: none; }
+.dj input { accent-color: var(--el); margin: 0; }
+.dj:has(input:checked) { background: var(--el-soft); border-color: var(--el); }
+.count { font-variant-numeric: tabular-nums; font-size: .78rem; color: var(--muted); }
+
+/* Items */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { border: 1px solid var(--line); background: var(--surface); padding: 6px 14px; border-radius: 99px; cursor: pointer; font-weight: 600; font-size: .88rem; display: inline-flex; align-items: center; gap: 7px; }
+.tab .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--el); }
+.tab[aria-selected="true"] { background: var(--el-soft); border-color: var(--el); }
+.tab .badge { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px 14px; }
+.slot { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) 4.2em; gap: 6px; align-items: center; }
+.slot .n { font-size: .75rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.item-in { width: 100%; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); min-width: 0; }
+.qty { padding: 5px 6px; }
+.qty:disabled { opacity: .35; }
+.slot .err { grid-column: 2 / 4; font-size: .74rem; color: var(--bad); margin-top: -3px; }
+.psy { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.psy .chip { font-size: .78rem; padding: 3px 9px; border-radius: 99px; border: 1px dashed var(--line); color: var(--muted); }
+.psy .chip.on { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--fg); font-weight: 600; }
+.hint { font-size: .82rem; color: var(--muted); max-width: 70ch; }
+
+/* Story & coins */
+.events { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.ev { display: flex; gap: 9px; align-items: center; padding: 8px 11px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.ev input { accent-color: var(--accent); margin: 0; }
+.ev:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.coins { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.coins .num { width: 11em; }
+
+/* Password tablet */
+.tablet-col { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); min-width: 0; }
+@media (max-width: 940px) { .tablet-col { position: static; } }
+.tablet { background: var(--tablet); color: var(--tablet-fg); border-radius: 14px; padding: 16px; display: grid; gap: 12px; box-shadow: 0 10px 30px -14px rgba(10,14,30,.6); }
+.tablet h2 { color: var(--tablet-fg); font-size: 1.1rem; }
+.ttabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ttab { border: 1px solid #ffffff22; background: transparent; color: var(--tablet-dim); padding: 7px 4px; border-radius: 8px; cursor: pointer; font-family: var(--f-display); font-size: .95rem; display: grid; gap: 1px; justify-items: center; }
+.ttab small { font-family: var(--f-body); font-size: .7rem; letter-spacing: .02em; }
+.ttab[aria-selected="true"] { color: #1a1406; background: var(--tc); border-color: var(--tc); }
+.ttab[aria-selected="true"] small { color: #1a1406cc; }
+.includes { font-size: .78rem; color: var(--tablet-dim); }
+.includes b { color: var(--tablet-fg); font-weight: 600; }
+.pw-scroll { max-height: min(56vh, 560px); overflow: auto; border-radius: 8px; }
+@media (max-width: 940px) { .pw-scroll { max-height: 340px; } }
+.pw { display: grid; gap: 4px; font-family: var(--f-mono); font-weight: 600; font-size: 1.02rem; }
+.pw-row { display: grid; grid-template-columns: 2.1em auto auto; justify-content: start; gap: 12px; align-items: center; }
+.pw-row .ln { font-size: .68rem; color: var(--tablet-dim); text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
+.grp { display: flex; gap: 2px; }
+.grp span { width: 1.32em; text-align: center; background: var(--tablet-cell); border-radius: 4px; padding: 2px 0; }
+.tablet.stale .pw { opacity: .35; filter: grayscale(1); }
+.tbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.tbtn { background: var(--tablet-fg); color: #1a1406; border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 700; cursor: pointer; }
+.tbtn.alt { background: transparent; color: var(--tablet-fg); border: 1px solid #ffffff33; }
+.tstat { font-size: .76rem; color: var(--tablet-dim); font-variant-numeric: tabular-nums; }
+.issues { background: var(--bad-soft); color: var(--fg); border-radius: 8px; padding: 9px 11px; font-size: .82rem; display: grid; gap: 4px; }
+.issues b { color: var(--bad); }
+.issues button { justify-self: start; }
+.copytext { width: 100%; font-family: var(--f-mono); font-size: .8rem; background: var(--tablet-cell); color: var(--tablet-fg); border: 1px solid #ffffff22; border-radius: 6px; padding: 6px; resize: none; }
+.toast { font-size: .78rem; color: var(--ok); min-height: 1.2em; }
+.tablet .toast { color: #8fe0b0; }
+
+details.how { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 18px; }
+details.how summary { cursor: pointer; font-family: var(--f-display); font-size: 1.05rem; }
+details.how ol { padding-left: 1.3em; display: grid; gap: 6px; margin: 12px 0 0; max-width: 75ch; }
+details.how code { font-family: var(--f-mono); font-size: .85em; background: var(--sunk); padding: 1px 5px; border-radius: 4px; }
+footer.credit { margin-top: 22px; font-size: .8rem; color: var(--muted); display: grid; gap: 4px; }
+footer.credit a { color: var(--accent); }
+.el-venus { --el: var(--venus); --el-soft: var(--venus-soft); }
+.el-mercury { --el: var(--mercury); --el-soft: var(--mercury-soft); }
+.el-mars { --el: var(--mars); --el-soft: var(--mars-soft); }
+.el-jupiter { --el: var(--jupiter); --el-soft: var(--jupiter-soft); }
+@media (prefers-reduced-motion: no-preference) { .btn, .tab, .dj, .ev, .ttab { transition: background-color .15s, border-color .15s; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="elements" aria-hidden="true"><span style="background:var(--venus);--c:var(--venus)"></span><span style="background:var(--mercury);--c:var(--mercury)"></span><span style="background:var(--mars);--c:var(--mars)"></span><span style="background:var(--jupiter);--c:var(--jupiter)"></span></div>
+      <h1 style="margin-top:10px">Golden Sun Password Generator</h1>
+      <p class="lede">Build your party from <i>Golden Sun</i>, then enter the password at the start of <i>The Lost Age</i> to carry it over. Gold passwords carry everything, Silver drops items and coins, and Bronze keeps only levels, Djinn, story events and Psynergy items.</p>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="btn-example" type="button">Load max example</button>
+      <button class="btn ghost" id="btn-clear" type="button">Clear all</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main class="editor">
+      <section class="section" aria-labelledby="h-party">
+        <div class="sec-head">
+          <h2 id="h-party">Party levels &amp; stats</h2>
+          <div class="tiers"><span class="tier g">Gold</span><span class="tier s">Silver</span><span class="tier b" title="Bronze includes levels only">Bronze · levels</span></div>
+        </div>
+        <div class="mode" role="radiogroup" aria-label="How stats are entered">
+          <label><input type="radio" name="mode" id="mode-base" value="base" checked><span>Base stats</span></label>
+          <label><input type="radio" name="mode" id="mode-stats" value="stats"><span>In-game stats</span></label>
+        </div>
+        <p class="hint" id="mode-hint"></p>
+        <div class="party" id="party"></div>
+      </section>
+
+      <section class="section" aria-labelledby="h-djinn">
+        <div class="sec-head">
+          <h2 id="h-djinn">Djinn collected <span class="count" id="dj-total"></span></h2>
+          <div class="tiers"><span class="tier g">Gold</span><span class="tier s">Silver</span><span class="tier b">Bronze</span></div>
+        </div>
+        <p class="hint">The password stores which Djinn you own, not who holds them. They’re shared out again when you load the password.</p>
+        <div class="djinn" id="djinn"></div>
+      </section>
+
+      <section class="section" aria-labelledby="h-items">
+        <div class="sec-head">
+          <h2 id="h-items">Inventories</h2>
+          <div class="tiers"><span class="tier g">Gold</span></div>
+        </div>
+        <div class="tabs" role="tablist" id="item-tabs"></div>
+        <div class="slots" id="slots" role="tabpanel"></div>
+        <p class="hint">Type an item name or its ID number. Set a quantity only for consumables like Herbs, Nuts or Game Tickets (up to 30). Items that can only be stacked in <i>The Lost Age</i> can’t be stacked in a password.</p>
+        <div class="psy" aria-live="polite"><span class="small muted" style="margin-right:4px">Psynergy items carried <span class="tier s" style="margin-left:4px">Silver</span> <span class="tier b">Bronze</span></span><span id="psy"></span></div>
+      </section>
+
+      <section class="section" aria-labelledby="h-story">
+        <div class="sec-head">
+          <h2 id="h-story">Story events &amp; coins</h2>
+          <div class="tiers"><span class="tier g">Gold</span><span class="tier s">Silver · events</span><span class="tier b">Bronze · events</span></div>
+        </div>
+        <div class="events" id="events"></div>
+        <div class="coins">
+          <label for="coins" style="font-weight:600">Coins</label>
+          <input class="num" id="coins" type="number" min="0" max="999999" inputmode="numeric">
+          <span class="small muted">0 – 999,999 · Gold only</span>
+        </div>
+      </section>
+
+      <details class="how">
+        <summary>How the password is built</summary>
+        <ol>
+          <li>Everything is packed into bits: 7 per level, 1 per Djinn, 1 per story event and Psynergy item, 60 per character for stats, 9 per item ID, 5 per consumable stack and 24 for coins.</li>
+          <li>A 16-bit checksum key is run over every byte (start at <code>0xFFFF</code>, shift left, add <code>0xEFDF</code> on carry) and then inverted.</li>
+          <li>Each byte is XORed with the key’s low byte, and both key bytes are appended.</li>
+          <li>The bits are cut into 6-bit groups. After every 9 groups a check group (their sum mod 64) is added.</li>
+          <li>Each group gets its own position added (mod 64) and is swapped for one of the 64 password symbols. The alphabet skips <code>0</code>, <code>1</code>, <code>I</code>, <code>O</code>, <code>l</code> and <code>o</code> so nothing reads ambiguously on screen.</li>
+        </ol>
+      </details>
+      <footer class="credit">
+        <p>Password logic ported from the <i>Golden Sun Password Generator</i> spreadsheet by Dyrati (2023). The original Lua is at <a href="https://github.com/Dyrati/Golden-Sun-Password-Transfer" target="_blank" rel="noopener">github.com/Dyrati/Golden-Sun-Password-Transfer</a>.</p>
+        <p>Your build is saved in this browser only.</p>
+      </footer>
+    </main>
+
+    <aside class="tablet-col" aria-label="Generated password">
+      <div class="tablet" id="tablet">
+        <div class="tbar"><h2>Your password</h2><span class="tstat" id="pw-len"></span></div>
+        <div class="ttabs" role="tablist" id="ttabs">
+          <button class="ttab" role="tab" data-tier="gold" style="--tc:var(--gold)" type="button">Gold<small>260 symbols</small></button>
+          <button class="ttab" role="tab" data-tier="silver" style="--tc:var(--silver)" type="button">Silver<small>61 symbols</small></button>
+          <button class="ttab" role="tab" data-tier="bronze" style="--tc:var(--bronze)" type="button">Bronze<small>16 symbols</small></button>
+        </div>
+        <p class="includes" id="includes"></p>
+        <div class="issues" id="issues" hidden></div>
+        <div class="pw-scroll"><div class="pw" id="pw" aria-live="polite"></div></div>
+        <div class="tbar">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="tbtn" id="btn-copy" type="button">Copy password</button>
+            <button class="tbtn alt" id="btn-copy-rows" type="button">Copy as rows</button>
+          </div>
+        </div>
+        <textarea class="copytext" id="copytext" rows="3" readonly hidden aria-label="Password text to copy"></textarea>
+        <div class="toast" id="toast" role="status"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const D = {"items":["Long Sword","Broad Sword","Claymore","Great Sword","Shamshir","Silver Blade","Fire Brand","Arctic Blade","Gaia Blade","Sol Blade","Muramasa","?","?","?","Machete","Short Sword","Hunter's Sword","Battle Rapier","Master Rapier","Ninja Blade","Swift Sword","Elven Rapier","Assassin Blade","Mystery Blade","Kikuichimonji","Masamune","Bandit's Sword","?","?","?","Battle Axe","Broad Axe","Great Axe","Dragon Axe","Giant Axe","Vulcan Axe","Burning Axe","Demon Axe","?","?","?","?","Mace","Heavy Mace","Battle Mace","War Mace","Righteous Mace","Grievous Mace","Blessed Mace","Wicked Mace","?","?","?","?","Wooden Stick","Magic Rod","Witch's Wand","Blessed Ankh","Psynergy Rod","Frost Wand","Angelic Ankh","Demonic Staff","Crystal Rod","Zodiac Wand","Shaman's Rod","?","?","?","?","?","?","?","?","?","Leather Armor","Psynergy Armor","Chain Mail","Armored Shell","Plate Mail","Steel Armor","Spirit Armor","Dragon Scales","Demon Mail","Asura's Armor","Spiked Armor","?","?","?","Cotton Shirt","Travel Vest","Fur Coat","Adept's Clothes","Elven Shirt","Silver Vest","Water Jacket","Storm Gear","Kimono","Ninja Garb","?","?","?","?","One-Piece Dress","Travel Robe","Silk Robe","China Dress","Jerkin","Cocktail Dress","Blessed Robe","Magical Cassock","Mysterious Robe","Feathered Robe","Oracle's Robe","?","?","?","?","Wooden Shield","Bronze Shield","Iron Shield","Knight's Shield","Mirrored Shield","Dragon Shield","Earth Shield","?","?","Padded Gloves","Leather Gloves","Gauntlets","Vambrace","War Gloves","Spirit Gloves","Battle Gloves","Aura Gloves","?","Leather Armlet","Armlet","Heavy Armlet","Silver Armlet","Spirit Armlet","Virtuous Armlet","Guardian Armlet","?","?","Open Helm","Bronze Helm","Iron Helm","Steel Helm","Silver Helm","Knight's Helm","Warrior's Helm","Adept's Helm","?","?","?","Leather Cap","Wooden Cap","Mail Cap","Jeweled Crown","Ninja Hood","Lucky Cap","Thunder Crown","Prophet's Hat","Lure Cap","?","Circlet","Silver Circlet","Guardian Circlet","Platinum Circlet","Mythril Circlet","Glittering Tiara","?","?","?","?","?","?","?","?","Herb","Nut","Vial","Potion","Hermes' Water","Empty Bottle","Psy Crystal","Antidote","Elixir","Water of Life","Mist Potion","Power Bread","Cookie","Apple","Hard Nut","Mint","Lucky Pepper","?","Lash Pebble","Pound Cube","Orb of Force","Douse Drop","Frost Jewel","Lifting Gem","Halt Gem","Cloak Ball","Carry Stone","Catch Beads","Tremor Bit","Scoop Gem","Cyclone Chip","?","?","Burst Brooch","Grindstone","Hover Jade","?","Teleport Lapis","?","?","Venus Star","Mercury Star","Mars Star","Jupiter Star","Mythril Bag","Small Jewel","Smoke Bomb","Sleep Bomb","Game Ticket","Lucky Medal","Dragon's Eye","Bone","Anchor Charm","Corn","Cell Key","Boat Ticket","Sacred Feather","Mystic Draught","Oil Drop","Weasel's Claw","Bramble Seed","Crystal Powder","Black Orb","Red Key","Blue Key","Mythril Bag","Jupiter Star","Mars Star","?","?","Mythril Shirt","Silk Shirt","Running Shirt","?","?","?","Hyper Boots","Quick Boots","Fur Boots","Turtle Boots","?","?","Adept Ring","War Ring","Sleep Ring","Healing Ring","Unicorn Ring","Fairy Ring","Cleric's Ring","?","?","?","Huge Sword","Mythril Blade","Levatine","Darksword","Excalibur","Robber's Blade","Soul Brand","Storm Brand","Hestia Blade","Lightning Sword","Rune Blade","Cloud Brand","?","Sylph Rapier","Burning Sword","Pirate's Sword","Corsair's Edge","Pirate's Sabre","Hypnos' Sword","Mist Sabre","Phaeton's Blade","Tisiphone Edge","?","Apollo's Axe","Gaia's Axe","Stellar Axe","Captain's Axe","Viking Axe","Disk Axe","Themis' Axe","Mighty Axe","Tartarus Axe","?","Comet Mace","Tungsten Mace","Demon Mace","Hagbone Mace","Blow Mace","Rising Mace","Thanatos Mace","?","Cloud Wand","Salamander Rod","Nebula Wand","Dracomace","Glower Staff","Goblin's Rod","Meditation Rod","Fireman's Pole","Atropos' Rod","Lachesis' Rule","Clotho's Distaff","Staff of Anubis","?","Trident","?","Planet Armor","Dragon Mail","Chronos Mail","Stealth Armor","Xylion Armor","Ixion Mail","Phantasmal Mail","Erebus Armor","Valkyrie Mail","?","Faery Vest","Mythril Clothes","Full Metal Vest","Wild Coat","Floral Dress","Festival Coat","Erinyes Tunic","Triton's Ward","?","Dragon Robe","Ardagh Robe","Muni Robe","Aeolian Cassock","Iris Robe","?","Luna Shield","Dragon Shield","Flame Shield","Terra Shield","Cosmos Shield","Fujin Shield","Aegis Shield","?","Aerial Gloves","Titan Gloves","Big Bang Gloves","Crafted Gloves","Riot Gloves","Spirit Gloves","?","Clear Bracelet","Mythril Armlet","Bone Armlet","Jester's Armlet","Leda's Bracelet","?","Dragon Helm","Mythril Helm","Fear Helm","Millenium Helm","Viking Helm","Gloria Helm","Minerva Helm","?","Floating Hat","Nurse's Cap","Thorn Crown","Otafuku Mask","Hiotoko Mask","Crown of Glory","Alastor's Hood","?","Pure Circlet","Astral Circlet","Psychic Circlet","Demon Circlet","Clarity Circlet","Brilliant Circlet","Berserker Band","?","Divine Camisole","Herbed Shirt","Golden Shirt","Casual Shirt","Leather Boots","Dragon Boots","Safety Boots","Knight's Greave","Silver Greave","Ninja Sandals","Golden Boots","Spirit Ring","Stardust Ring","Aroma Ring","Rainbow Ring","Soul Ring","Guardian Ring","Golden Ring","?","Rusty Sword","Rusty Sword","Rusty Sword","Rusty Sword","Rusty Axe","Rusty Axe","Rusty Mace","Rusty Mace","Rusty Staff","Rusty Staff","Rusty Staff","?","Tear Stone","Star Dust","Sylph Feather","Dragon Skin","Salamander Tail","Golem Core","Mythril Silver","Dark Matter","Orihalcon","?","Right Prong","Left Prong","Center Prong","?","Mysterious Card","Trainer's Whip","Tomegathericon","?","?","Healing Fungus","Laughing Fungus","Signal Whistle","Dancing Idol","Pretty Stone","Red Cloth","Milk","Li'l Turtle","Aquarius Stone","Large Bread","Sea God's Tear","Ruin Key","Magma Ball"],"djinn":["Flint","Granite","Quartz","Vine","Sap","Ground","Bane","Fizz","Sleet","Mist","Spritz","Hail","Tonic","Dew","Forge","Fever","Corona","Scorch","Ember","Flash","Torch","Gust","Breeze","Zephyr","Smog","Kite","Squall","Luff"],"psy":["Orb of Force","Douse Drop","Frost Jewel","Lifting Gem","Halt Gem","Cloak Ball","Carry Stone","Catch Beads"],"stack":["Herb","Nut","Vial","Potion","Psy Crystal","Antidote","Elixir","Water of Life","Power Bread","Cookie","Apple","Hard Nut","Mint","Lucky Pepper","Smoke Bomb","Sleep Bomb","Game Ticket","Lucky Medal","Sacred Feather","Oil Drop","Weasel's Claw","Bramble Seed","Crystal Powder"],"chars":["A","B","C","D","E","F","G","H","J","K","L","M","N","P","Q","R","S","T","U","V","W","X","Y","Z","2","3","4","5","6","7","8","9","a","b","c","d","e","f","g","h","i","j","k","m","n","p","q","r","s","t","u","v","w","x","y","z","!","?","#","&","$","%","+","="]};
+// Golden Sun password core — mirrors the spreadsheet's Calculation sheet exactly.
+// state: { mode:'base'|'stats', levels[4], djinn:Set(names), events:{hammet,colosso,hsu,deadbeard,vale,vault},
+//          stats[4][6] (HP,PP,ATK,DEF,AGI,LCK), items[4][15] of {name, qty} or null, coins }
+function makeCore(D) {
+  const MULT = [ // Squire, Guard, Wind Seer, Water Seer — HP,PP,ATK,DEF,AGI,LCK
+    [1.1, 0.8, 1.1, 1.0, 1.1, 1.0],
+    [1.1, 0.8, 1.0, 1.1, 0.7, 1.0],
+    [0.8, 1.4, 0.8, 0.9, 1.3, 1.1],
+    [0.9, 1.3, 0.9, 1.0, 0.8, 1.3],
+  ];
+  const STAT_BITS = [11, 11, 10, 10, 10, 8];
+  const STAT_MAX = [1999, 1999, 999, 999, 999, 99];
+  const idOf = new Map();
+  D.items.forEach((n, i) => { if (n !== '?' && !idOf.has(n)) idOf.set(n, i + 1); });
+  const stackSet = new Set(D.stack);
+  const bin = (v, n) => { v = Math.floor(v); let s = v.toString(2); return s.length > n ? s : '0'.repeat(n - s.length) + s; };
+
+  function hiddenStat(state, c, s) {
+    const v = Number(state.stats[c][s]) || 0;
+    return state.mode === 'stats' ? Math.floor((v + 0.9) / MULT[c][s]) : v;
+  }
+
+  function validate(state) {
+    const errs = [];
+    state.levels.forEach((l, c) => { if (!(l >= 0 && l <= 99 && Number.isInteger(+l))) errs.push({ where: `level-${c}`, msg: 'Level must be 0–99' }); });
+    for (let c = 0; c < 4; c++) for (let s = 0; s < 6; s++) {
+      const raw = Number(state.stats[c][s]);
+      const h = hiddenStat(state, c, s);
+      if (!(raw >= 0) || h > STAT_MAX[s] || !Number.isFinite(raw)) errs.push({ where: `stat-${c}-${s}`, msg: `Too high (stored value ${h} > ${STAT_MAX[s]})` });
+    }
+    for (let c = 0; c < 4; c++) state.items[c].forEach((it, k) => {
+      if (!it) return;
+      if (!idOf.has(it.name)) errs.push({ where: `item-${c}-${k}`, msg: 'Unknown item' });
+      else if (it.qty > 1 && !stackSet.has(it.name)) errs.push({ where: `item-${c}-${k}`, msg: 'This item can’t be stacked in a password' });
+      else if (it.qty > 30) errs.push({ where: `item-${c}-${k}`, msg: 'Max stack is 30' });
+    });
+    if (!(state.coins >= 0 && state.coins <= 999999)) errs.push({ where: 'coins', msg: 'Coins must be 0–999,999' });
+    return errs;
+  }
+
+  function buildBits(state) {
+    // Levels: mia & ivan & garet & isaac, then rearranged [21:28][13:20][5:12][1:4]
+    const L = [3, 2, 1, 0].map(c => bin(state.levels[c], 7)).join('');
+    const levelbits = L.slice(20, 28) + L.slice(12, 20) + L.slice(4, 12) + L.slice(0, 4);
+    // Djinn: per element, djinn 7..1; jupiter & mars & mercury & venus, then [25:28][17:24][9:16][1:8]
+    const el = e => { let s = ''; for (let r = 7; r >= 1; r--) s += state.djinn.has(D.djinn[e * 7 + r - 1]) ? '1' : '0'; return s; };
+    const Dj = el(3) + el(2) + el(1) + el(0);
+    const djinnbits = Dj.slice(24, 28) + Dj.slice(16, 24) + Dj.slice(8, 16) + Dj.slice(0, 8);
+    const ev = state.events;
+    const eventbits = '00' + [ev.vault, ev.vale, ev.deadbeard, !ev.hsu, ev.colosso, ev.hammet].map(b => b ? '1' : '0').join('');
+    const owned = new Set(); state.items.forEach(list => list.forEach(it => it && owned.add(it.name)));
+    let psy = ''; for (let i = 7; i >= 0; i--) psy += owned.has(D.psy[i]) ? '1' : '0';
+    let stats = '';
+    for (let c = 0; c < 4; c++) for (let s = 0; s < 6; s++) stats += bin(hiddenStat(state, c, s), STAT_BITS[s]);
+    let ids = '';
+    for (let c = 0; c < 4; c++) for (let k = 0; k < 15; k++) { const it = state.items[c][k]; ids += bin(it ? idOf.get(it.name) : 0, 9); }
+    const chunks = []; for (let i = 0; i < ids.length; i += 63) chunks.push(ids.slice(i, i + 63));
+    const itemIds = chunks.join('0');
+    let qty = '';
+    for (let c = 0; c < 4; c++) for (const sn of D.stack) {
+      const it = state.items[c].find(x => x && x.name === sn);
+      qty += bin(it ? Math.max(0, (it.qty || 1) - 1) : 0, 5);
+    }
+    const coins = bin(state.coins, 24);
+    return {
+      gold: levelbits + djinnbits + eventbits + stats + '0'.repeat(8) + itemIds + qty + coins + '0'.repeat(40),
+      silver: levelbits + djinnbits + eventbits + psy + stats,
+      bronze: levelbits + djinnbits + eventbits + psy,
+    };
+  }
+
+  function encode(bits) {
+    const bytes = []; for (let i = 0; i < bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i + 8), 2));
+    let key = 0xFFFF;
+    for (const b of bytes) {
+      key = (b * 256) ^ key;
+      for (let i = 0; i < 8; i++) key = (2 * key + (key >= 0x8000 ? 0xEFDF : 0)) % 65536;
+    }
+    const inv = (-key - 1 + 65536) % 65536, hi = inv >> 8, lo = inv & 255;
+    const out = bytes.map(b => b ^ lo); out.push(hi ^ lo); out.push(lo);
+    let s = out.map(b => bin(b, 8)).join('');
+    s += '0'.repeat((6 - s.length % 6) % 6);
+    const dataGroups = []; for (let i = 0; i < s.length; i += 6) dataGroups.push(parseInt(s.slice(i, i + 6), 2));
+    const groups = []; let di = 0;
+    while (di < dataGroups.length) {
+      const blk = dataGroups.slice(di, di + 9); di += 9;
+      groups.push(...blk);
+      if (blk.length === 9) groups.push(blk.reduce((a, b) => a + b, 0) % 64);
+    }
+    return groups.map((g, n) => D.chars[(g + n) % 64]).join('');
+  }
+
+  function generate(state) {
+    const bits = buildBits(state);
+    return { gold: encode(bits.gold), silver: encode(bits.silver), bronze: encode(bits.bronze), bits };
+  }
+  return { generate, validate, hiddenStat, idOf, stackSet, MULT, STAT_MAX };
+}
+
+
+const core = makeCore(D);
+const HEROES = [
+  { name: 'Isaac', cls: 'Squire', el: 'venus' },
+  { name: 'Garet', cls: 'Guard', el: 'mars' },
+  { name: 'Ivan', cls: 'Wind Seer', el: 'jupiter' },
+  { name: 'Mia', cls: 'Water Seer', el: 'mercury' },
+];
+const STATS = ['HP', 'PP', 'ATK', 'DEF', 'AGI', 'LCK'];
+const ELEMENTS = [ { name: 'Venus', el: 'venus' }, { name: 'Mercury', el: 'mercury' }, { name: 'Mars', el: 'mars' }, { name: 'Jupiter', el: 'jupiter' } ];
+const EVENTS = [
+  { key: 'hammet', label: 'Saved Hammet' }, { key: 'colosso', label: 'Won Colosso' }, { key: 'hsu', label: 'Saved Hsu' },
+  { key: 'deadbeard', label: 'Beat Deadbeard' }, { key: 'vale', label: 'Returned to Vale' }, { key: 'vault', label: 'Returned to Vault' },
+];
+const TIERS = {
+  gold: '<b>Gold</b> carries levels, stats, Djinn, story events, every item and quantity, and coins.',
+  silver: '<b>Silver</b> carries levels, stats, Djinn, story events and Psynergy items. Other items and coins are dropped.',
+  bronze: '<b>Bronze</b> carries levels, Djinn, story events and Psynergy items. Stats, items and coins are dropped.',
+};
+const ITEM_NAMES = [...core.idOf.keys()];
+const nameByLower = new Map(ITEM_NAMES.map(n => [n.toLowerCase(), n]));
+
+function blankState() {
+  return { mode: 'base', levels: [1, 1, 1, 1], djinn: new Set(),
+    events: { hammet: false, colosso: false, hsu: false, deadbeard: false, vale: false, vault: false },
+    stats: HEROES.map(() => [0, 0, 0, 0, 0, 0]), items: HEROES.map(() => Array(15).fill(null)), coins: 0 };
+}
+function exampleState() {
+  const s = blankState();
+  const lists = [
+    ["Sol Blade","Warrior's Helm","Dragon Scales","Spirit Gloves","Catch Beads","Carry Stone","Black Orb","Running Shirt","Mythril Shirt","Soul Ring","Ninja Sandals","Ninja Sandals","Ninja Sandals","Ninja Sandals","Orihalcon"],
+    ["Excalibur","Warrior's Helm","Asura's Armor","War Gloves","Cleric's Ring","Lifting Gem","Mars Star","Hyper Boots","Quick Boots","Silver Greave","Knight's Greave","Silver Greave","Silver Greave","Knight's Greave","Orihalcon"],
+    ["Kikuichimonji","Mythril Circlet","Feathered Robe","Spirit Armlet","Cloak Ball","Orb of Force","Halt Gem","Mythril Shirt","Hyper Boots","Casual Shirt","Rainbow Ring","Herbed Shirt","Lucky Pepper","Orihalcon","Orihalcon"],
+    ["Zodiac Wand","Lucky Cap","Oracle's Robe","Virtuous Armlet","Douse Drop","Frost Jewel","Swift Sword","Silk Shirt","Quick Boots","Divine Camisole","Soul Ring","Aroma Ring","Mysterious Robe","Divine Camisole","Swift Sword"],
+  ];
+  s.levels = [99, 99, 99, 99]; s.djinn = new Set(D.djinn);
+  Object.keys(s.events).forEach(k => s.events[k] = true);
+  s.stats = HEROES.map(() => [1999, 1999, 999, 999, 999, 99]);
+  s.items = lists.map(l => l.map(n => ({ name: n, qty: 1 })));
+  s.coins = 999999;
+  return s;
+}
+
+let state = exampleState();
+let ui = { tier: 'gold', itemTab: 0 };
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ---------- persistence ----------
+const KEY = 'gs-pw-gen-v1';
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify({ ...state, djinn: [...state.djinn], ui })); } catch (e) {}
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY); if (!raw) return;
+    const o = JSON.parse(raw);
+    if (!o || !Array.isArray(o.levels) || !Array.isArray(o.items)) return;
+    state = { ...blankState(), ...o, djinn: new Set(o.djinn || []) };
+    if (o.ui) ui = { ...ui, ...o.ui };
+  } catch (e) {}
+}
+
+// ---------- build static UI ----------
+function buildParty() {
+  $('party').innerHTML = HEROES.map((h, c) => `
+    <div class="hero el-${h.el}">
+      <div class="nm"><h3>${h.name}</h3><span class="cls">${h.cls}</span></div>
+      <div class="statrow lvl"><label for="lv-${c}">LV</label><input class="num" id="lv-${c}" type="number" min="0" max="99" inputmode="numeric"></div>
+      ${STATS.map((s, i) => `<div class="statrow"><label for="st-${c}-${i}">${s}</label><input class="num" id="st-${c}-${i}" type="number" min="0" inputmode="numeric"></div><div class="stored" id="sd-${c}-${i}" hidden></div>`).join('')}
+    </div>`).join('');
+  HEROES.forEach((h, c) => {
+    $('lv-' + c).addEventListener('input', e => { state.levels[c] = e.target.value === '' ? 0 : +e.target.value; refresh(); });
+    STATS.forEach((s, i) => $(`st-${c}-${i}`).addEventListener('input', e => { state.stats[c][i] = e.target.value === '' ? 0 : +e.target.value; refresh(); }));
+  });
+  document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', e => { state.mode = e.target.value; refresh(); }));
+}
+function buildDjinn() {
+  $('djinn').innerHTML = ELEMENTS.map((e, ei) => `
+    <div class="el-col el-${e.el}">
+      <header><h3>${e.name} <span class="count" id="djc-${ei}"></span></h3><button class="linkbtn" data-el="${ei}" type="button" id="djall-${ei}">All</button></header>
+      ${D.djinn.slice(ei * 7, ei * 7 + 7).map((n, k) => `<label class="dj"><input type="checkbox" id="dj-${ei * 7 + k}" data-name="${esc(n)}">${esc(n)}</label>`).join('')}
+    </div>`).join('');
+  D.djinn.forEach((n, i) => $('dj-' + i).addEventListener('change', e => { e.target.checked ? state.djinn.add(n) : state.djinn.delete(n); refresh(); }));
+  ELEMENTS.forEach((e, ei) => $('djall-' + ei).addEventListener('click', () => {
+    const names = D.djinn.slice(ei * 7, ei * 7 + 7); const all = names.every(n => state.djinn.has(n));
+    names.forEach(n => all ? state.djinn.delete(n) : state.djinn.add(n)); syncInputs(); refresh();
+  }));
+}
+function buildItems() {
+  const dl = document.createElement('datalist'); dl.id = 'item-list';
+  dl.innerHTML = ITEM_NAMES.map(n => `<option value="${esc(n)}"></option>`).join('');
+  document.body.appendChild(dl);
+  $('item-tabs').innerHTML = HEROES.map((h, c) => `<button class="tab el-${h.el}" role="tab" type="button" id="itab-${c}" data-c="${c}"><span class="dot"></span>${h.name}<span class="badge" id="ibadge-${c}"></span></button>`).join('');
+  HEROES.forEach((h, c) => $('itab-' + c).addEventListener('click', () => { ui.itemTab = c; renderSlots(); save(); }));
+  $('psy').innerHTML = D.psy.map((n, i) => `<span class="chip" id="psy-${i}">${esc(n)}</span>`).join(' ');
+}
+function renderSlots() {
+  const c = ui.itemTab;
+  HEROES.forEach((h, i) => $('itab-' + i).setAttribute('aria-selected', i === c ? 'true' : 'false'));
+  $('slots').setAttribute('aria-labelledby', 'itab-' + c);
+  $('slots').innerHTML = Array.from({ length: 15 }, (_, k) => `
+    <div class="slot">
+      <span class="n">${k + 1}</span>
+      <input class="item-in" id="it-${k}" list="item-list" autocomplete="off" spellcheck="false" placeholder="Empty" aria-label="${HEROES[c].name} item ${k + 1}">
+      <input class="num qty" id="iq-${k}" type="number" min="1" max="30" inputmode="numeric" aria-label="Quantity for item ${k + 1}" title="Quantity">
+      <span class="err" id="ie-${k}" hidden></span>
+    </div>`).join('');
+  for (let k = 0; k < 15; k++) {
+    const it = state.items[c][k];
+    $('it-' + k).value = it ? it.name : '';
+    $('iq-' + k).value = it ? (it.qty || 1) : '';
+    $('it-' + k).addEventListener('input', e => {
+      const raw = e.target.value.trim();
+      if (!raw) { state.items[c][k] = null; }
+      else {
+        let name = nameByLower.get(raw.toLowerCase()) || raw;
+        if (/^\d+$/.test(raw)) { const byId = D.items[+raw - 1]; if (byId && byId !== '?') name = byId; }
+        const prev = state.items[c][k];
+        state.items[c][k] = { name, qty: prev ? prev.qty : 1 };
+      }
+      refresh();
+    });
+    $('it-' + k).addEventListener('change', e => { const it = state.items[c][k]; if (it && core.idOf.has(it.name)) e.target.value = it.name; });
+    $('iq-' + k).addEventListener('input', e => { const it = state.items[c][k]; if (it) { it.qty = Math.max(1, +e.target.value || 1); refresh(); } });
+  }
+  refresh();
+}
+function buildEvents() {
+  $('events').innerHTML = EVENTS.map(ev => `<label class="ev"><input type="checkbox" id="ev-${ev.key}">${ev.label}</label>`).join('');
+  EVENTS.forEach(ev => $('ev-' + ev.key).addEventListener('change', e => { state.events[ev.key] = e.target.checked; refresh(); }));
+  $('coins').addEventListener('input', e => { state.coins = e.target.value === '' ? 0 : +e.target.value; refresh(); });
+}
+function buildTablet() {
+  document.querySelectorAll('.ttab').forEach(b => b.addEventListener('click', () => { ui.tier = b.dataset.tier; refresh(); }));
+  $('btn-copy').addEventListener('click', () => copy(current[ui.tier], 'Password copied'));
+  $('btn-copy-rows').addEventListener('click', () => copy(rows(current[ui.tier]).join('\n'), 'Copied in rows of 10'));
+  $('btn-example').addEventListener('click', () => { state = exampleState(); syncInputs(); renderSlots(); toast('Loaded the max-everything example'); });
+  $('btn-clear').addEventListener('click', () => { state = blankState(); syncInputs(); renderSlots(); toast('Cleared. Every field is back to empty.'); });
+}
+
+// ---------- sync + render ----------
+function syncInputs() {
+  $('mode-' + state.mode).checked = true;
+  HEROES.forEach((h, c) => { $('lv-' + c).value = state.levels[c]; STATS.forEach((s, i) => $(`st-${c}-${i}`).value = state.stats[c][i]); });
+  D.djinn.forEach((n, i) => $('dj-' + i).checked = state.djinn.has(n));
+  EVENTS.forEach(ev => $('ev-' + ev.key).checked = !!state.events[ev.key]);
+  $('coins').value = state.coins;
+}
+let current = { gold: '', silver: '', bronze: '' };
+const rows = pw => { const r = []; for (let i = 0; i < pw.length; i += 10) r.push(pw.slice(i, i + 5) + (pw.length > i + 5 ? ' ' + pw.slice(i + 5, i + 10) : '')); return r; };
+
+function refresh() {
+  // mode hint + stored values
+  $('mode-hint').textContent = state.mode === 'stats'
+    ? 'Enter the stats shown in-game with no equipment on and every Djinn on Standby. Each is divided by the default class multiplier to get the stored value.'
+    : 'Enter hidden base stats directly: no Djinn, equipment or class multipliers applied.';
+  for (let c = 0; c < 4; c++) for (let i = 0; i < 6; i++) {
+    const el = $(`sd-${c}-${i}`);
+    if (state.mode === 'stats') { el.hidden = false; el.textContent = 'stored ' + core.hiddenStat(state, c, i); } else el.hidden = true;
+  }
+  // djinn counts
+  ELEMENTS.forEach((e, ei) => {
+    const n = D.djinn.slice(ei * 7, ei * 7 + 7).filter(d => state.djinn.has(d)).length;
+    $('djc-' + ei).textContent = n + '/7';
+    $('djall-' + ei).textContent = n === 7 ? 'None' : 'All';
+  });
+  $('dj-total').textContent = state.djinn.size + ' / 28';
+  // items: badges, qty enable, psy chips
+  HEROES.forEach((h, c) => $('ibadge-' + c).textContent = state.items[c].filter(Boolean).length + '/15');
+  const c = ui.itemTab;
+  for (let k = 0; k < 15; k++) {
+    const it = state.items[c][k], q = $('iq-' + k);
+    if (!q) continue;
+    const stackable = it && core.stackSet.has(it.name);
+    q.disabled = !stackable;
+    if (!stackable && document.activeElement !== q) q.value = it ? 1 : '';
+  }
+  const owned = new Set(); state.items.forEach(l => l.forEach(it => it && owned.add(it.name)));
+  D.psy.forEach((n, i) => $('psy-' + i).classList.toggle('on', owned.has(n)));
+
+  // validation
+  document.querySelectorAll('.bad').forEach(e => e.classList.remove('bad'));
+  document.querySelectorAll('.slot .err').forEach(e => e.hidden = true);
+  const errs = core.validate(state);
+  const tierErrs = errs.filter(e => ui.tier === 'gold' || !(e.where.startsWith('item') || e.where === 'coins') && !(ui.tier === 'bronze' && e.where.startsWith('stat')));
+  for (const e of errs) {
+    const [kind, a, b] = e.where.split('-');
+    if (kind === 'level') $('lv-' + a).classList.add('bad');
+    else if (kind === 'stat') { $(`st-${a}-${b}`).classList.add('bad'); }
+    else if (kind === 'coins') $('coins').classList.add('bad');
+    else if (kind === 'item' && +a === c) { $('it-' + b).classList.add('bad'); const m = $('ie-' + b); m.hidden = false; m.textContent = e.msg; }
+  }
+  const iss = $('issues');
+  if (tierErrs.length) {
+    iss.hidden = false;
+    const where = w => { const [k, a, b] = w.split('-'); return k === 'level' ? HEROES[a].name + ' level' : k === 'stat' ? HEROES[a].name + ' ' + STATS[b] : k === 'coins' ? 'Coins' : HEROES[a].name + ' item ' + (+b + 1); };
+    iss.innerHTML = `<b>${tierErrs.length} field${tierErrs.length > 1 ? 's need' : ' needs'} fixing before this password will work.</b>` +
+      tierErrs.slice(0, 4).map(e => `<span>${esc(where(e.where))}: ${esc(e.msg)}</span>`).join('') + (tierErrs.length > 4 ? `<span>…and ${tierErrs.length - 4} more, marked in red.</span>` : '');
+  } else iss.hidden = true;
+  $('tablet').classList.toggle('stale', tierErrs.length > 0);
+
+  // generate
+  try { current = core.generate(state); } catch (e) { current = { gold: '', silver: '', bronze: '' }; }
+  document.querySelectorAll('.ttab').forEach(b => b.setAttribute('aria-selected', b.dataset.tier === ui.tier ? 'true' : 'false'));
+  $('includes').innerHTML = TIERS[ui.tier];
+  const pw = current[ui.tier] || '';
+  $('pw-len').textContent = pw.length + ' symbols · ' + Math.ceil(pw.length / 10) + ' rows';
+  $('pw').innerHTML = rows(pw).map((r, i) => {
+    const [a, b] = r.split(' ');
+    const g = s => s ? `<span class="grp">${[...s].map(ch => `<span>${esc(ch)}</span>`).join('')}</span>` : '<span></span>';
+    return `<div class="pw-row"><span class="ln">${i + 1}</span>${g(a)}${g(b)}</div>`;
+  }).join('');
+  save();
+}
+
+let toastTimer;
+function toast(msg) { $('toast').textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').textContent = '', 2600); }
+function copy(text, msg) {
+  const ta = $('copytext');
+  const fallback = () => { ta.hidden = false; ta.value = text; ta.focus(); ta.select(); toast('Press Ctrl+C (or ⌘C) to copy the selected text'); };
+  try {
+    navigator.clipboard.writeText(text).then(() => { ta.hidden = true; toast(msg); }, fallback);
+  } catch (e) { fallback(); }
+}
+
+load();
+buildParty(); buildDjinn(); buildItems(); buildEvents(); buildTablet();
+syncInputs(); renderSlots();
+</script>
+
+</body>
+</html>
